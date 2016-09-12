@@ -1,0 +1,345 @@
+@(message: String)
+
+@main("TrashWatch"){
+    <style type="text/css">
+        html, body, #map-canvas, .container-fluid { height: 100%; margin: 0; padding: 0;}
+        body {padding-top: 50px;}
+    </style>
+
+    <link href="@routes.Assets.at("stylesheets/bootstrap-toggle.min.css")" rel="stylesheet">
+
+    <script type="text/javascript"
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAv2HBFnJ7DrVUpblUwuZ40elbnhXaS29w&libraries=geometry">
+    </script>
+
+}{
+
+    <div id="map-canvas">
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="newReport" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">New Report</h4>
+                </div>
+                <form enctype="multipart/form-data" id="newitemform" name="newitemform" method="post" >
+                    <div class="modal-body">
+                        <label>This area is a potential breeding site for:</label>
+                        <div class="row">
+                            <div class="col-xs-6 col-sm-4 col-md-2 text-center">
+                                <img src="@routes.Assets.at("images/drawable/mosquitoes_off.png")" width="80px">
+                                <input id="mosquitoes" name="mosquitoes" type="checkbox" data-toggle="toggle"
+                                    data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                            <div class="col-xs-6 col-sm-4 col-md-2 text-center">
+                                <img src="@routes.Assets.at("images/drawable/cock_off.png")" width="80px">
+                                <input id="cockroaches" name="cockroaches" type="checkbox" data-toggle="toggle"
+                                    data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                            <div class="col-xs-6 col-sm-4 col-md-2 text-center">
+                                <img src="@routes.Assets.at("images/drawable/mice_off.png")" width="80px">
+                                <input id="mice" name="mice" type="checkbox" data-toggle="toggle"
+                                    data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                            <div class="col-xs-6 col-sm-4 col-md-2 text-center">
+                                <img src="@routes.Assets.at("images/drawable/biohazard_off.png")" width="80px">
+                                <input id="biohazard" name="biohazard" type="checkbox" data-toggle="toggle"
+                                    data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                            <div class="col-xs-6 col-sm-4 col-md-2 text-center">
+                                <img src="@routes.Assets.at("images/drawable/tick_off.png")" width="80px">
+                                <input id="tick" name="tick" type="checkbox" data-toggle="toggle"
+                                data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                        </div>
+                        <br/>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <input type="text" class="form-control" id="othervectors" name="othervectors" placeholder="Others">
+                            </div>
+                        </div>
+                        <br/>
+                        <label>Do you think the trash came from</label>
+                        <div class="row">
+                            <div class="col-xs-6 col-md-3 text-center">
+                                <img src="@routes.Assets.at("images/drawable/houses_off.png")" width="80px">
+                                <input id="houses" name="houses" type="checkbox" data-toggle="toggle"
+                                    data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                            <div class="col-xs-6 col-md-3 text-center">
+                                <img src="@routes.Assets.at("images/drawable/business_off.png")" width="80px">
+                                <input id="businesses" name="businesses" type="checkbox" data-toggle="toggle"
+                                    data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                            <div class="col-xs-6 col-md-3 text-center">
+                                <img src="@routes.Assets.at("images/drawable/construction_off.png")" width="80px">
+                                <input id="constructions" name="constructions" type="checkbox" data-toggle="toggle"
+                                    data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                        </div>
+                        <br/>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <input type="text" class="form-control" id="othersources" name="othersources" placeholder="Others">
+                            </div>
+                        </div>
+                        <br/>
+                        <div class="row">
+                            <!--<div class="col-xs-12 col-sm-4 col-md-4">
+                                <img id="uploadedimage" name="uploadedimage" src="images/drawable/image.png" width="120x">
+                            </div>-->
+                            <div class="col-xs-12 col-sm-8 col-md-8">
+                                <label for="siteimage">Image of the site</label>
+                                <input id="siteimage" name="siteimage" type="file" id="exampleInputFile">
+                            </div>
+                        </div>
+                        <br/>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <textarea id="description" name="description" class="form-control" rows="3" placeholder="Description"></textarea>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="coords_lat" name="coords_lat" value="0.0">
+                        <input type="hidden" id="coords_lon" name="coords_lon" value="0.0">
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal" onclick="resetForm();">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="postForm();">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="modal fade" id="filters" tabindex="-1" role="dialog" aria-labelledby="filtersLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="filtersLabel">Filters</h4>
+                </div>
+                <form enctype="multipart/form-data" id="filterform" name="filterform" method="post" >
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-xs-6 col-md-5">
+                                <label class="control-label" for="startDate">Initial Date</label>
+                                <div class="input-group">
+                                    <input type="date" class="form-control" id="startDate" name="startDate" placeholder="DD/MM/YYYY">
+                                    <span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                </div>
+                            </div>
+                            <div class="col-xs-6 col-md-5">
+                                <label class="control-label" for="endDate">Final Date</label>
+                                <div class="input-group">
+                                    <input type="date" class="form-control" id="endDate" name="endDate" placeholder="DD/MM/YYYY">
+                                    <span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <br/>
+                        <label>Vector</label>
+
+                        <div class="row">
+                            <div class="col-xs-6 col-sm-4 col-md-2 text-center">
+                                <img src="@routes.Assets.at("images/drawable/mosquitoes_off.png")" width="80px">
+                                <input id="fmosquitoes" name="fmosquitoes" type="checkbox" data-toggle="toggle"
+                                data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                            <div class="col-xs-6 col-sm-4 col-md-2 text-center">
+                                <img src="@routes.Assets.at("images/drawable/cock_off.png")" width="80px">
+                                <input id="fcockroaches" name="fcockroaches" type="checkbox" data-toggle="toggle"
+                                data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                            <div class="col-xs-6 col-sm-4 col-md-2 text-center">
+                                <img src="@routes.Assets.at("images/drawable/mice_off.png")" width="80px">
+                                <input id="fmice" name="fmice" type="checkbox" data-toggle="toggle"
+                                data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                            <div class="col-xs-6 col-sm-4 col-md-2 text-center">
+                                <img src="@routes.Assets.at("images/drawable/biohazard_off.png")" width="80px">
+                                <input id="fbiohazard" name="fbiohazard" type="checkbox" data-toggle="toggle"
+                                data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                            <div class="col-xs-6 col-sm-4 col-md-2 text-center">
+                                <img src="@routes.Assets.at("images/drawable/tick_off.png")" width="80px">
+                                <input id="ftick" name="ftick" type="checkbox" data-toggle="toggle"
+                                data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                        </div>
+
+                        <br/>
+                        <label>Breeding site</label>
+
+                        <div class="row">
+                            <div class="col-xs-6 col-md-3 text-center">
+                                <img src="@routes.Assets.at("images/drawable/houses_off.png")" width="80px">
+                                <input id="fhouses" name="fhouses" type="checkbox" data-toggle="toggle"
+                                data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                            <div class="col-xs-6 col-md-3 text-center">
+                                <img src="@routes.Assets.at("images/drawable/business_off.png")" width="80px">
+                                <input id="fbusinesses" name="fbusinesses" type="checkbox" data-toggle="toggle"
+                                data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                            <div class="col-xs-6 col-md-3 text-center">
+                                <img src="@routes.Assets.at("images/drawable/construction_off.png")" width="80px">
+                                <input id="fconstructions" name="fconstructions" type="checkbox" data-toggle="toggle"
+                                data-on="Yes" data-off="No" data-style="ios">
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-default" onclick="resetFilters();">Clear filters</button>
+                        <button type="button" class="btn btn-primary" onclick="postFilters();"><i class="glyphicon glyphicon-filter"></i> Apply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rounded button over the map -->
+    <div id="div_newreport" style="margin: 20px;">
+        <button id="btn_newreport" class="btn btn-primary btn-circle btn-lg"
+            data-toggle="modal" data-target="#newReport" onclick="Singleton.openedModal = true;">
+            <i class="glyphicon glyphicon-plus"></i>
+        </button>
+    </div>
+
+    <div id="div_mylocation" style="margin: 10px;">
+        <button id="btn_mylocation" class="btn btn-default"
+            onclick="goHome();">
+            <i class="glyphicon glyphicon-home"></i>
+        </button>
+    </div>
+
+}{
+    <script src="@routes.Assets.at("javascripts/bootstrap-toggle.min.js")"></script>
+    <script src="@routes.Assets.at("javascripts/singleton.js")"></script>
+
+    <script src="@routes.Assets.at("javascripts/mapjs/googlemap.js")"></script>
+    <script src="@routes.Assets.at("javascripts/mapjs/markerclusterer.js")"></script>
+
+    <script>
+        setInterval(function(){
+            if (Singleton.filtersApplied) {
+                //$.notify('Filters applied', {position: 'bottom center', className: 'success'});
+            } else {
+                $.get( "/getpoints/" + Singleton.date.getTime(), function( data ) {
+                    if (data.length > 0) {
+                        Singleton.date = new Date();
+                    }
+                    addMarkers(data);
+                });
+                //$.notify('Checking for new points', {position: 'bottom center', className: 'success'});
+                getLocation();
+            }
+        }, 5000);
+    </script>
+
+    <script>
+
+        function goHome() {
+            Singleton.firstLoad = true;
+            getLocation();
+        }
+
+        function resetForm() {
+            $('#mosquitoes' ).bootstrapToggle('off');
+            $('#cockroaches' ).bootstrapToggle('off');
+            $('#mice' ).bootstrapToggle('off');
+            $('#biohazard' ).bootstrapToggle('off');
+            $('#tick' ).bootstrapToggle('off');
+            $('#houses' ).bootstrapToggle('off');
+            $('#businesses' ).bootstrapToggle('off');
+            $('#constructions' ).bootstrapToggle('off');
+
+            $('#newitemform' ).trigger('reset');
+        }
+
+        function resetFilters() {
+            $('#fmosquitoes' ).bootstrapToggle('off');
+            $('#fcockroaches' ).bootstrapToggle('off');
+            $('#fmice' ).bootstrapToggle('off');
+            $('#fbiohazard' ).bootstrapToggle('off');
+            $('#ftick' ).bootstrapToggle('off');
+            $('#fhouses' ).bootstrapToggle('off');
+            $('#fbusinesses' ).bootstrapToggle('off');
+            $('#fconstructions' ).bootstrapToggle('off');
+
+            $('#filterform' ).trigger('reset');
+
+            Singleton.filtersApplied = false;
+            $('#filters' ).modal('hide');
+
+            markerCluster.clearMarkers();
+            markersArray = [];
+            $.get( "/getpoints/" + 0, function( data ) {
+                if (data.length > 0) {
+                    Singleton.date = new Date();
+                }
+                addMarkers(data);
+            });
+            getLocation();
+        }
+
+        function postForm() {
+            if (($("#coords_lat" ).val( ) == "0.0") && ($("#coords_lon" ).val( ) == "0.0")) {
+                alert("You are trying to create a report from a empty location. Please allow your " +
+                "browser to use your location or check if any other problem is preventing for access the location information.");
+            } else {
+                var formData = new FormData($("#newitemform" )[0]);
+                jQuery.ajax('@routes.ReportController.postNewReport()', {
+                    processData: false,
+                    contentType: false,
+                    cache: false,
+                    type: 'POST',
+                    data: formData,
+                    success: function(data) {
+                        $.notify('Report saved', {position: 'bottom center', className: 'success'})
+                    }
+                });
+                $('#newReport').modal('hide');
+            }
+        }
+
+        function postFilters() {
+            Singleton.filtersApplied = true;
+            getLocation();
+            markerCluster.clearMarkers();
+            markersArray = [];
+            //do something with the area of displayed points
+
+
+            var filterData = new FormData($("#filterform" )[0]);
+            jQuery.ajax('@routes.ReportController.postFilterReport()', {
+                processData: false,
+                contentType: false,
+                cache: false,
+                type: 'POST',
+                data: filterData,
+                success: function(data) {
+                    $.notify('Filters applied', {position: 'bottom center', className: 'success'});
+
+                    var bounds = addMarkers(data);
+                    if (data.length > 1) {
+                        map.fitBounds(bounds);
+                    } else {
+                        if (data.length == 1) {
+                            map.setCenter(new google.maps.LatLng(data[0].lat, data[0].lon))
+                        }
+                    }
+                }
+            });
+            $('#filters').modal('hide');
+        }
+    </script>
+}
